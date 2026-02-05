@@ -1,0 +1,11 @@
+<?xml version='1.0' encoding='utf-8'?>
+<widget id="com.beeplus.v2ray" version="1.0.0" xmlns="http://www.w3.org/ns/widgets">
+    <name>Bee Plus V2ray</name>
+    <description>Professional VPN for Star 6</description>
+    <author email="dev@beeplus.com">Your Name</author>
+    <content src="index.html" />
+    <preference name="Fullscreen" value="true" />
+    <plugin name="cordova-plugin-v2ray-fast" spec="1.0.0" />
+    <access origin="*" />
+</widget>
+
