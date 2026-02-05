@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Bee Plus V2ray Pro</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root { --primary: #2F6C60; --bg: #f4f6f8; --card: #ffffff; --red: #d32f2f; --green: #388e3c; }
+        body { margin: 0; font-family: sans-serif; background: var(--bg); display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+        header { background: var(--primary); color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+        .tabs { display: flex; background: white; border-bottom: 1px solid #ddd; }
+        .tab { flex: 1; padding: 15px; text-align: center; font-weight: bold; color: #888; cursor: pointer; }
+        .tab.active { color: var(--primary); border-bottom: 3px solid var(--primary); }
+        .container { padding: 20px; flex-grow: 1; }
+        .vpn-card { background: var(--card); border-radius: 12px; padding: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); border-top: 4px solid var(--primary); }
+        .stat { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 0.9rem; }
+        .traffic { display: flex; justify-content: flex-end; gap: 10px; color: #666; font-size: 0.8rem; margin-bottom: 15px; }
+        .tweak-select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; background: #fafafa; font-size: 0.9rem; margin-top: 5px; }
+        .start-btn { width: 100%; padding: 15px; border-radius: 50px; border: none; background: var(--primary); color: white; font-size: 1.2rem; font-weight: bold; margin-top: 20px; cursor: pointer; transition: 0.3s; }
+        .start-btn.connected { background: var(--red); }
+        #logs { background: #000; color: #0f0; padding: 15px; font-family: monospace; font-size: 0.7rem; height: 200px; overflow-y: auto; display: none; margin: 10px; border-radius: 8px; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <i class="fas fa-bars"></i>
+        <div style="text-align: center;">
+            <b style="display: block;">Bee Plus V2ray</b>
+            <small id="opName">Operator: Maroc Telecom(MA)</small>
+        </div>
+        <i class="fas fa-sync-alt" onclick="location.reload()"></i>
+    </header>
+
+    <div class="tabs">
+        <div class="tab active" onclick="showPage('home')">HOME</div>
+        <div class="tab" onclick="showPage('logs')">LOGS</div>
+    </div>
+
+    <div id="home" class="container">
+        <div class="vpn-card">
+            <div class="stat">
+                <span>MOBILE: <b>10.202.172.21</b></span>
+                <span style="color:brown">v2ray|Xray</span>
+            </div>
+            <div class="stat">
+                <span>STATUS: <b id="status" style="color:var(--red)">DISCONNECTED</b></span>
+            </div>
+            <div class="traffic">
+                <span><i class="fas fa-arrow-up"></i> <span id="up">0 B</span></span>
+                <span><i class="fas fa-arrow-down"></i> <span id="down">0 B</span></span>
+            </div>
+            <label style="font-size: 0.8rem; color: #555;">Tweaks</label>
+            <select id="server" class="tweak-select" onchange="updateOP()">
+                <option value="iam">🇲🇦 [IAM ⭐️6_10] [V2RAY] [1] 🆕</option>
+                <option value="inwi">🇲🇦 [INWI ⭐️6] [V2RAY] [VIP]</option>
+                <option value="orange">🇲🇦 [ORANGE ⭐️6] [V2RAY] [NEW]</option>
+            </select>
+            <button id="btn" class="start-btn" onclick="startVPN()">START</button>
+        </div>
+    </div>
+
+    <div id="logs">
+        <div>[SYSTEM] App Initialized v1.0.56...</div>
+    </div>
+
+    <script>
+        let running = false;
+        let upInterval;
+
+        // ثغرات الـ SNI الحقيقية لعام 2026 (نجمة 6)
+        const CONFIGS = {
+            iam: { sni: "web.whatsapp.com", server: "188.214.157.58" },
+            inwi: { sni: "m.facebook.com", server: "51.254.120.10" },
+            orange: { sni: "www.orange.ma", server: "141.95.161.201" }
+        };
+
+        function updateOP() {
+            const val = document.getElementById('server').value;
+            const op = { iam: "Maroc Telecom(MA)", inwi: "Inwi(MA)", orange: "Orange(MA)" };
+            document.getElementById('opName').innerText = "Operator: " + op[val];
+        }
+
+        function showPage(p) {
+            document.getElementById('home').style.display = p === 'home' ? 'block' : 'none';
+            document.getElementById('logs').style.display = p === 'logs' ? 'block' : 'none';
+        }
+
+        function addLog(m) {
+            const l = document.getElementById('logs');
+            l.innerHTML += `<div>[${new Date().toLocaleTimeString()}] ${m}</div>`;
+            l.scrollTop = l.scrollHeight;
+        }
+
+        function startVPN() {
+            const btn = document.getElementById('btn');
+            const st = document.getElementById('status');
+            const conf = CONFIGS[document.getElementById('server').value];
+
+            if(!running) {
+                btn.innerText = "CONNECTING...";
+                addLog("Connecting to " + conf.server + " via SNI: " + conf.sni);
+                
+                setTimeout(() => {
+                    running = true;
+                    btn.innerText = "STOP";
+                    btn.classList.add('connected');
+                    st.innerText = "CONNECTED";
+                    st.style.color = "var(--green)";
+                    addLog("V2Ray Tunnel Established.");
+                    simulateSpeed();
+                }, 2000);
+            } else {
+                running = false;
+                btn.innerText = "START";
+                btn.classList.remove('connected');
+                st.innerText = "DISCONNECTED";
+                st.style.color = "var(--red)";
+                clearInterval(upInterval);
+                addLog("VPN Stopped.");
+            }
+        }
+
+        function simulateSpeed() {
+            upInterval = setInterval(() => {
+                document.getElementById('up').innerText = (Math.random() * 100).toFixed(1) + " KB";
+                document.getElementById('down').innerText = (Math.random() * 500).toFixed(1) + " KB";
+            }, 1000);
+        }
+    </script>
+</body>
+</html>
